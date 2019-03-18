@@ -1,0 +1,15 @@
+400 K = Temperature                                                   	(1)
+1 atm = pressure 							(2)
+1297908 J*mol^-1*A^-2 = Force constant of c-c (stretch)			(3)
+1385831 J*mol^-1*A^-2 = Force constant of c-h (stretch)			(4)
+1.526 A = Equilibrium bond length c-c (stretch)				(5)
+1.09 A = Equilibrium bond length c-h (stretch)				(6)
+35.0 kcal*mol^-1*radian^-2 = Force constant of h-c-h, h-c-c (bend)	(7)
+1.91113553 radians = Equilibrium angle HCC and HCH (109.5 degrees)	(8)
+0 = gamma
+3 = n
+1.3 kcal mol^-1 A^-2= V1
+0.1554 e = Charge hydrogen atom
+-0.4662 e = Charge carbon atom 
+0.5   = Aij
+0.6   = Bij
