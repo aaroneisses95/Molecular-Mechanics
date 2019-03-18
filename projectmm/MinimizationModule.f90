@@ -37,16 +37,15 @@ contains
       logical, intent(inout)            :: Check
       integer                           :: k
       real, intent(in)                  :: r
-      
-      
 
       !!! Select a particle randomly (k is the index of the atoms)
-      
+
       k = 10 
       do while (k >= 9 .or. k == 0)
          call random_number(random)
          k = int(10*random)
       enddo
+      
       !!! Save the configuration of the molecule in a dummy variable
       
       MoleculeDummy = MoleculeInit
@@ -81,10 +80,12 @@ contains
 
       call TotalEnergy(NewEnergy, MoleculeDummy, Variables)
 
-      !!! Check whether the new configuration is accepted
-
+      !!! Check whether the new configuration is accepted. The false and
+      !!! true statements are there to return to the main function. They
+      !!! are used in the exit strategy. 
 
       Denergy = NewEnergy - CurrentEnergy
+
       if (Denergy < 0) then
          check = .TRUE.
          MoleculeInit = MoleculeDummy
@@ -95,24 +96,17 @@ contains
          if (q < Chance) then
             Check = .TRUE.
             MoleculeInit = MoleculeDummy
-            CurrentEnergy = NewEnergy
-         else
-            if (abs(NewEnergy - CurrentEnergy) >= 0.0000001) then
+            CurrentEnergy = NewEnergy   
+            if (abs(NewEnergy - CurrentEnergy) <= 0.0000001) then
                Check = .FALSE.
             else
                Check = .TRUE.
             endif
+         else
+            Check = .FALSE.
          endif
       endif
-      
-      !!! update new configuration if check = .TRUE.
-      !!! for the exit strategy, it could return the value 1 and
-      !!! add it to a dummy variable in the mainprogram. In that way
-      !!! the amount of consecutive cycles can be checked. 
-
-      
 
    endsubroutine
-
 
 endmodule

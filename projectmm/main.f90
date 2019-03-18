@@ -36,27 +36,23 @@ use EnergyModule
    Call ReadParameters(Variables)
    Call ReadData(MoleculeInit)
    Call TotalEnergy(CurrentEnergy, MoleculeInit, Variables)
-   print *, 'Dit is voor Algorithm:', CurrentEnergy   
+   
    !!! Start the Metropolis algorithm
    
    ncycle = 0
-   r = 0.00001
+   r = 0.0001
 
-   do while (ncycle < 1000000)
+   do while (ncycle < 5000)
       Call Move(CurrentEnergy, MoleculeInit, Variables, Check, r)
       if (Check .eqv. .true.) then
          ncycle = 0
       elseif (Check .eqv. .false.) then
          ncycle = ncycle + 1
       endif
-      i = i + 1
-      if (i == 1000) then
-              r = 0.00000001
-      endif
    enddo
 
    !!! Print everything that is useful to know (energy, amount of cycles etc.)
-   print *, ncycle 
+   
    print *, 'The lowest Energy =', CurrentEnergy
 
 endprogram 

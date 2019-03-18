@@ -46,7 +46,8 @@ contains
       Bond(6) = BondLength(1,8, Molecule)
       Bond(7) = BondLength(1,2, Molecule)
 
-      !!! Calculate the energy of bond with E=K(r-r0)^2
+      !!! Calculate the energy of bonds with E=K(r-r0)^2. The first loop is for
+      !!! the C-H bonds. The other line is for the only C-C bond in ethane.
     
       do i=1,6
          EnStretch = EnStretch + Variables%ForceConstantCH*((Bond(i) -         &
@@ -56,7 +57,6 @@ contains
       EnStretch = EnStretch + Variables%ForceConstantCC*((Bond(7) -            &
       Variables%EquiBondCC)**2) 
 
-     ! print *, 'This is Stretch Energy = ', EnStretch      
 
    endsubroutine
 
@@ -69,6 +69,8 @@ contains
       integer                           :: i
 
       EnBend = 0
+      
+      !!! The angles are calculated between the atoms of interest. 
 
       Angle(1) = (BondLength(6,7, Molecule)**2 - Bond(4)**2 - Bond(5)**2) / (2*Bond(4)*Bond(5))
       
@@ -94,24 +96,18 @@ contains
       
       Angle(12) = (BondLength(1,5, Molecule)**2 - Bond(3)**2 - Bond(7)**2) / (2*Bond(3)*Bond(7))
 
+      !!! The bending energy is calculated 
 
       do i = 1, 12
          EnBend = EnBend + Variables%ForceConstantAngle*((Angle(i) - Variables%EquiAngle)**2)
       enddo
    
-  !    print *, 'This is Bending Energy = ', EnBend
    endsubroutine
-
 
  !  subroutine TorsionalEnergy
  
  !  endsubroutine
   
-
-
-
-
-
    subroutine NonBondedEnergy(EnNonBond, Molecule, Variables)
       real, intent(inout)               :: EnNonBond
       type (Atom), intent(inout)        :: Molecule(8)
@@ -121,6 +117,9 @@ contains
       
       EnNonBond = 0
       Kelec = 8.987551787*(10**9) ! Constant in Law of Coulomb
+      
+      !!! In this double loop, the non bonded energy is calculated between all the atoms
+      !!! with both the electronic effect and the Van Der Waals effect. 
 
       do i = 1, 8
          do j = 1, 8
@@ -137,8 +136,6 @@ contains
             endif
          enddo
       enddo
-      
-   !   print *, 'This is Non Bonded Energy = ', EnNonBond
 
    endsubroutine 
    
@@ -154,7 +151,6 @@ contains
       call NonBondedEnergy(EnNonBond, Molecule, Variables)
 
       TotEner = EnStretch + EnBend + EnNonBond
-      print *, 'This is TotEner =', TotEner
    endsubroutine
 
 endmodule
