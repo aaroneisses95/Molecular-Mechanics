@@ -9,9 +9,13 @@ endfunction
 
 
 program test
-        real :: r1
+        real, allocatable :: r1(:)
+        allocate(r1(3))
 
-        r1 = RandomNumber()
+        r1(1) = RandomNumber()
+
+        print *, r1
+        deallocate(r1)
 
         print *, r1
 

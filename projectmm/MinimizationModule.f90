@@ -19,6 +19,7 @@
 module MinimizationModule
 use DataModule
 use EnergyModule
+   
    implicit none
    save 
    private
@@ -26,20 +27,22 @@ use EnergyModule
 
 contains
 
-   subroutine Move(CurrentEnergy, MoleculeInit, Variables, Check, r)
-      real, intent(inout)               :: CurrentEnergy
-      type (Atom), intent(inout)        :: MoleculeInit(8)
-      type (Atom)                       :: MoleculeDummy(8)
-      type (Parameters), intent(inout)  :: Variables
-      real                              :: Denergy, ChangeX, ChangeY, ChangeZ, &
-                                           VectorX, VectorY, VectorZ, NewEnergy&
-                                           , Chance, q, random    
-      logical, intent(inout)            :: Check
-      integer                           :: k
-      real, intent(in)                  :: r
-
+   subroutine Move(CurrentEnergy, MoleculeInit, Variables, Check, r, NumberofAtoms, Bonds)
+      real, intent(inout)                       :: CurrentEnergy
+      type (Atom), intent(inout), allocatable   :: MoleculeInit(:)
+      type (Atom), allocatable                  :: MoleculeDummy(:)
+      type (Parameters), intent(inout)          :: Variables
+      real                                      :: Denergy, ChangeX, ChangeY, ChangeZ,   &
+                                                   VectorX, VectorY, VectorZ, NewEnergy, &   
+                                                   Chance, q, random    
+      logical, intent(inout)                    :: Check
+      integer                                   :: k
+      real, intent(in)                          :: r
+      integer, intent(in)                       :: NumberofAtoms
+      type (Binding), intent(inout)             :: Bonds(:)
+      
       !!! Select a particle randomly (k is the index of the atoms)
-
+      
       k = 10 
       do while (k >= 9 .or. k == 0)
          call random_number(random)
@@ -48,6 +51,7 @@ contains
       
       !!! Save the configuration of the molecule in a dummy variable
       
+      allocate(MoleculeDummy(NumberofAtoms))
       MoleculeDummy = MoleculeInit
 
       !!! Give that particle a random displacement
@@ -78,7 +82,7 @@ contains
       !!! Calculate the energy of new configuration with dummy variable
       !!! and variable NewEnergy
 
-      call TotalEnergy(NewEnergy, MoleculeDummy, Variables)
+      call TotalEnergy(NewEnergy, MoleculeDummy, Variables, Bonds, NumberofAtoms)
 
       !!! Check whether the new configuration is accepted. The false and
       !!! true statements are there to return to the main function. They

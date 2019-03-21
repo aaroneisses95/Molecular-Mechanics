@@ -23,27 +23,40 @@ use MinimizationModule
 use EnergyModule
    implicit none
 
-   type (Atom)                   :: MoleculeInit(8)
-   type (Parameters)             :: Variables
-   integer                       :: ncycle, i
-   real                          :: CurrentEnergy, r
-   logical                       :: Check
+   type (Atom), allocatable     :: MoleculeInit(:), MoleculeRef(:)
+   type (Parameters)            :: Variables
+   type (Binding), allocatable  :: Bonds(:)
+   integer                      :: ncycle, i, NumberofAtoms
+   real                         :: CurrentEnergy, r, EnergyRef
+   logical                      :: Check
    
    print *, '-------------------Molecular Mechanics--------------------'
 
    !!! Initialize system by reading all the date from input
    
    Call ReadParameters(Variables)
-   Call ReadData(MoleculeInit)
-   Call TotalEnergy(CurrentEnergy, MoleculeInit, Variables)
+   Call ReadData(MoleculeInit, NumberofAtoms)
+
+   allocate(Bonds(NumberofAtoms-1), MoleculeRef(NumberofAtoms))
+   
+   Call AssigningBonds(Bonds, NumberofAtoms, MoleculeInit, Variables)
+   Call TotalEnergy(CurrentEnergy, MoleculeInit, Variables, Bonds, NumberofAtoms)
+
+
    
    !!! Start the Metropolis algorithm
-   
+   EnergyRef = CurrentEnergy
+   MoleculeRef = MoleculeInit
    ncycle = 0
    r = 0.0001
 
+   !!! Here, the move subroutine 'Move' is called a number of times until the exit
+   !!! strategy is reached. If ncycle reaches 5000, it means that the subroutine
+   !!! has been called 5000 consecutive times with as a result unsuccesful changing
+   !!! of the configuration of the molecule 
+
    do while (ncycle < 5000)
-      Call Move(CurrentEnergy, MoleculeInit, Variables, Check, r)
+      Call Move(CurrentEnergy, MoleculeInit, Variables, Check, r, NumberofAtoms, Bonds)
       if (Check .eqv. .true.) then
          ncycle = 0
       elseif (Check .eqv. .false.) then
@@ -52,7 +65,22 @@ use EnergyModule
    enddo
 
    !!! Print everything that is useful to know (energy, amount of cycles etc.)
-   
-   print *, 'The lowest Energy =', CurrentEnergy
+
+   print *, 'Initial coordinates of atoms'
+   print *, 'Number of Atom ', 'Type of Element ', 'X-Coordinate ', 'Y-Coordinate ', 'Z-Coordinate'
+   do i = 1,NumberofAtoms
+      print *, i, MoleculeRef(i)%element, MoleculeRef(i)%x, MoleculeRef(i)%y, MoleculeRef(i)%z
+   enddo
+   print *, 'Initial Energy (J) = ', EnergyRef
+   print *, 'Initial Energy (kcal) =', EnergyRef/4184   
+   print *, '-----------------------------------------------------------'
+   print *, 'End coordinates of atoms' 
+   print *, 'Number of Atom ', 'Type of Element ', 'X-Coordinate ', 'Y-Coordinate ', 'Z-Coordinate'
+   do i = 1,NumberofAtoms
+      print *, i, MoleculeInit(i)%element, MoleculeInit(i)%x, MoleculeInit(i)%y, MoleculeInit(i)%z
+   enddo
+   print *, 'End Energy (J) =', CurrentEnergy
+   print *, 'End Energy (kcal) =', CurrentEnergy/4184
+   deallocate(Bonds, MoleculeRef)
 
 endprogram 
