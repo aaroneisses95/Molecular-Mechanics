@@ -28,18 +28,18 @@ use EnergyModule
 contains
 
    subroutine Move(CurrentEnergy, MoleculeInit, Variables, Check, r, NumberofAtoms, Bonds)
-      real, intent(inout)                       :: CurrentEnergy
-      type (Atom), intent(inout), allocatable   :: MoleculeInit(:)
-      type (Atom), allocatable                  :: MoleculeDummy(:)
-      type (Parameters), intent(inout)          :: Variables
-      real                                      :: Denergy, ChangeX, ChangeY, ChangeZ,   &
-                                                   VectorX, VectorY, VectorZ, NewEnergy, &   
-                                                   Chance, q, random    
-      logical, intent(inout)                    :: Check
-      integer                                   :: k
-      real, intent(in)                          :: r
-      integer, intent(in)                       :: NumberofAtoms
-      type (Binding), intent(inout)             :: Bonds(:)
+      real, intent(inout)                               :: CurrentEnergy
+      type (Atom), intent(inout), allocatable           :: MoleculeInit(:)
+      type (Atom), allocatable                          :: MoleculeDummy(:)
+      type (Parameters), intent(inout)                  :: Variables
+      real                                              :: Denergy, ChangeX, ChangeY, ChangeZ,   &
+                                                           VectorX, VectorY, VectorZ, NewEnergy, &   
+                                                           Chance, q, random    
+      logical, intent(inout)                            :: Check
+      integer                                           :: k
+      real, intent(in)                                  :: r
+      integer, intent(in)                               :: NumberofAtoms
+      type (Binding), intent(inout), allocatable        :: Bonds(:)
       
       !!! Select a particle randomly (k is the index of the atoms)
       

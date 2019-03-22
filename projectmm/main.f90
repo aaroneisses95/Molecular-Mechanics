@@ -37,11 +37,9 @@ use EnergyModule
    Call ReadParameters(Variables)
    Call ReadData(MoleculeInit, NumberofAtoms)
 
-   allocate(Bonds(NumberofAtoms-1), MoleculeRef(NumberofAtoms))
+   allocate(MoleculeRef(NumberofAtoms))
    
-   Call AssigningBonds(Bonds, NumberofAtoms, MoleculeInit, Variables)
    Call TotalEnergy(CurrentEnergy, MoleculeInit, Variables, Bonds, NumberofAtoms)
-
 
    
    !!! Start the Metropolis algorithm
@@ -81,6 +79,6 @@ use EnergyModule
    enddo
    print *, 'End Energy (kJ/mol) =', CurrentEnergy/1000
    print *, 'End Energy (kcal/mol) =', CurrentEnergy/4184
-   deallocate(Bonds, MoleculeRef)
+   deallocate(MoleculeRef)
 
 endprogram 

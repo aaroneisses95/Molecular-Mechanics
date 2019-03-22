@@ -28,10 +28,10 @@ module DataModule
    endtype
    
    type Parameters
-      real              :: TEMP, PRESSURE, ForceConstantCC, ForceConstantCH,    &
-                           EquiBondCC, EquiBondCH, ForceConstantAngle,          &
-                           EquiAngle, gama, n, V1, ChargeH, ChargeC, WellDepthC,&
-                           WellDepthH, RstarC, RstarH, Boltzmann
+      real              :: TEMP, PRESSURE, ForceConstantCC, ForceConstantCH,            &
+                           EquiBondCC, EquiBondCH, ForceConstantAngle,                  & 
+                           EquiAngle, gama, n, V1, ChargeH, ChargeC, WellDepthC,        &
+                           WellDepthH, RstarC, RstarH, Boltzmann, ForceConstantAngleCCC
    endtype
 
    type Binding
@@ -54,15 +54,14 @@ contains
       type (Atom), intent(inout), allocatable           :: Molecule(:)
       integer, intent(inout)                            :: NumberofAtoms    
       integer                                           :: i, waste
-      
-      open(32,file='ethan_distorted.xyz')
+       
+      open(32,file='c4_cyclic.xyz')
       read(32,*) NumberofAtoms 
       allocate(Molecule(NumberofAtoms))
-      do i = 1,8 
+      do i = 1,NumberofAtoms 
          read(32,*) waste, Molecule(i)%element, Molecule(i)%x, Molecule(i)%y, Molecule(i)%z
       enddo
       close(32) 
-     
    endsubroutine
 
    !!! In the subroutine ReadParameters, all the parameters of the system are stored
@@ -78,6 +77,7 @@ contains
       read(33,*) Variables%EquiBondCC
       read(33,*) Variables%EquiBondCH
       read(33,*) Variables%ForceConstantAngle
+      read(33,*) Variables%ForceConstantAngleCCC
       read(33,*) Variables%EquiAngle
       read(33,*) Variables%gama
       read(33,*) Variables%n
@@ -109,17 +109,15 @@ contains
    endfunction
    
    subroutine AssigningBonds(Bonds, NumberofAtoms, Molecule, Variables)
-      type (Binding), intent(inout)             :: Bonds(:)
-      integer, intent(in)                       :: NumberofAtoms
-      type (Atom), intent(inout), allocatable   :: Molecule(:)
-      type (Parameters), intent(in)             :: Variables
-      integer                                   :: atom1, atom2, k   
-      integer, allocatable                      :: Check(:,:)
-
+      type (Binding), intent(inout), allocatable        :: Bonds(:)
+      integer, intent(in)                               :: NumberofAtoms
+      type (Atom), intent(inout), allocatable           :: Molecule(:)
+      type (Parameters), intent(in)                     :: Variables
+      integer                                           :: atom1, atom2, signal   
+      integer, allocatable                              :: Check(:,:)
+      type (Binding)                                    :: Bond
+      
       allocate(Check(NumberofAtoms,NumberofAtoms))
-    !  allocate(Bonds(NumberofAtoms-1))
-
-      k = 0
       Check = 0
 
       do atom1 = 1,NumberofAtoms
@@ -127,28 +125,55 @@ contains
             if (atom1 /= atom2) then     
                if (Molecule(atom1)%element == 'C' .and. Molecule(atom2)%element == 'C' .and. abs(BondLength(atom1, atom2,&
                Molecule)-Variables%EquiBondCC) < 0.2 .and. Check(atom1,atom2) == 0) then
-                  k = k + 1
-                  Bonds(k)%length = BondLength(atom1, atom2, Molecule)
-                  Bonds(k)%elements = 'CC'
+                  
+                  Bond%length = BondLength(atom1, atom2, Molecule)
+                  Bond%elements = 'CC'
                   Check(atom1,atom2) = 1
                   Check(atom2,atom1) = 1
-                  Bonds(k)%FirstAtom = atom1
-                  Bonds(k)%SecondAtom = atom2
+                  Bond%FirstAtom = atom1
+                  Bond%SecondAtom = atom2
+                  call AddToList_Bonds(Bonds, Bond)
                elseif (Molecule(atom1)%element == 'C' .and. Molecule(atom2)%element == 'H' .and. abs(BondLength(atom1, atom2,&
                Molecule)-Variables%EquiBondCH) < 0.2) then
-                  k = k + 1
-                  Bonds(k)%length = BondLength(atom1, atom2, Molecule)
-                  Bonds(k)%elements = 'CH'
-                  Bonds(k)%FirstAtom = atom1
-                  Bonds(k)%SecondAtom = atom2
+                  
+                  Bond%length = BondLength(atom1, atom2, Molecule)
+                  Bond%elements = 'CH'
+                  Bond%FirstAtom = atom1
+                  Bond%SecondAtom = atom2
+                  call AddToList_Bonds(Bonds, Bond)
                endif
             endif
          enddo
       enddo
-       
-       
+   
    endsubroutine
    
+   subroutine AddToList_Bonds(List, Element)
+      implicit none
+      type (Binding), intent(inout), allocatable        :: List(:)
+      type (Binding), intent(in)                        :: Element
+      type (Binding), allocatable                       :: ListDummy(:)
+      integer                                           :: i, isize
+
+
+      
+      if (allocated(List)) then
+         isize = size(List)
+         allocate(ListDummy(isize+1))
+         do i=1,isize
+            ListDummy(i) = List(i)
+         enddo
+         ListDummy(isize+1) = Element
+
+         deallocate(List)
+         call move_alloc(ListDummy, List)
+      else
+         allocate(List(1))
+         List(1) = Element
+      endif
+
+   endsubroutine
+
    subroutine AddToList_Angle(List, Element)
       real, intent(inout), allocatable  :: List(:) 
       real, intent(in)                  :: Element

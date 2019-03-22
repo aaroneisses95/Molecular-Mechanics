@@ -70,18 +70,36 @@ contains
       !!! there is being checked if they are connected by the same atom but with another atom at the
       !!! other side of the bond. If so, an angle(l) is created with the corresponding angle between
       !!! the two bonds. 
+        
+      
+
+
 
       do i = 1,NumberofAtoms
          if (Molecule(i)%element == 'C') then
             do j = 1,size(Bonds)
                do k = j,size(Bonds)
                   if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then
+                !     print *, '------------First-----------------------'
+                !     print *, 'i =', i
+                !     print *, 'j =', j, 'Bond(j) first atom =', Bonds(j)%FirstAtom, 'Bond(j) second atom =', Bonds(j)%SecondAtom
+                !     print *, 'k =', k, 'Bond(k) first atom =', Bonds(k)%FirstAtom, 'Bond(k) second atom =', Bonds(k)%SecondAtom
+                     
+                     
+                     
                      Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
                              (Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*   &
                              (Bonds(k)%length))
                      call AddToList_Angle(Angles, Angle)
                   endif
                   if (j /= k .and. Bonds(j)%SecondAtom == i .and. Bonds(k)%FirstAtom == i) then
+                !     print *, '-----------------Second--------------------'
+                !     print *, 'i =', i
+                !     print *, 'j =', j, 'Bond(j) first atom =', Bonds(j)%FirstAtom, 'Bond(j) second atom =', Bonds(j)%SecondAtom
+                !     print *, 'k =', k, 'Bond(k) first atom =', Bonds(k)%FirstAtom, 'Bond(k) second atom =', Bonds(k)%SecondAtom
+                     
+                          
+                          
                      Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
                              ((Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*  &
                              (Bonds(k)%length)))
@@ -91,13 +109,13 @@ contains
             enddo
          endif
       enddo
-
       !!! The bending energy is calculated by looping over all the angles 
       
       do l = 1, size(Angles)
-         EnBend = EnBend + Variables%ForceConstantAngle*((acos(Angles(l)) - Variables%EquiAngle)**2)
+         if (abs(acos(Angles(l)) - Variables%EquiAngle) < 1) then
+            EnBend = EnBend + Variables%ForceConstantAngle*((acos(Angles(l)) - Variables%EquiAngle)**2)
+         endif
       enddo
-   
    endsubroutine
 
    subroutine TorsionalEnergy(EnTors, Molecule, Variables, Bonds, NumberofAtoms)
@@ -130,7 +148,6 @@ contains
                      VectorX2 = Molecule(Bonds(k)%SecondAtom)%x - Molecule(i)%x
                      VectorY2 = Molecule(Bonds(k)%SecondAtom)%y - Molecule(i)%y
                      VectorZ2 = Molecule(Bonds(k)%SecondAtom)%z - Molecule(i)%z
-                     
                      !!! Determine the values of a, b and c in the standard formula
                      !!! a(x-x0) + b(y-y0) + c(z-z0) = 0
                      
@@ -157,7 +174,6 @@ contains
                      Plane%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
 
                      call AddToList_Plane(PlanesList, Plane)
-
                   endif
                enddo
             enddo
@@ -182,7 +198,7 @@ contains
             endif 
          enddo
       enddo
-
+   
    endsubroutine
 
    subroutine NonBondedEnergy(EnNonBond, Molecule, Variables, NumberofAtoms)
@@ -229,19 +245,20 @@ contains
       real, intent(inout)                               :: TotEner
       type (Atom), intent(inout), allocatable           :: Molecule(:)               
       type (Parameters), intent(in)                     :: Variables
-      type (Binding), intent(inout)                     :: Bonds(:)
+      type (Binding), intent(inout), allocatable        :: Bonds(:)
       real                                              :: EnStretch, EnBend, EnNonBond, EnTors
       integer, intent(in)                               :: NumberofAtoms
 
-      
+       
       call AssigningBonds(Bonds, NumberofAtoms, Molecule, Variables)
       call StretchEnergy(EnStretch, Molecule, Variables, Bonds, NumberofAtoms)
       call BendEnergy(EnBend, Molecule, Variables, Bonds, NumberofAtoms)
       call TorsionalEnergy(EnTors, Molecule, Variables, Bonds, NumberofAtoms)
       call NonBondedEnergy(EnNonBond, Molecule, Variables, NumberofAtoms)
-
-      TotEner = EnStretch + EnBend + EnNonBond
       
+      TotEner = EnStretch + EnBend + EnNonBond
+
+      deallocate(Bonds)
 !      print *, 'TotEner =', TotEner, 'EnStretch =', EnStretch, 'EnBend =', EnBend, 'EnTors =', EnTors, 'EnNonBond =', EnNonBond
    endsubroutine
 
