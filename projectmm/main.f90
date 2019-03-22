@@ -71,16 +71,16 @@ use EnergyModule
    do i = 1,NumberofAtoms
       print *, i, MoleculeRef(i)%element, MoleculeRef(i)%x, MoleculeRef(i)%y, MoleculeRef(i)%z
    enddo
-   print *, 'Initial Energy (J) = ', EnergyRef
-   print *, 'Initial Energy (kcal) =', EnergyRef/4184   
+   print *, 'Initial Energy (kJ/mol) = ', EnergyRef/1000
+   print *, 'Initial Energy (kcal/mol) =', EnergyRef/4184   
    print *, '-----------------------------------------------------------'
    print *, 'End coordinates of atoms' 
    print *, 'Number of Atom ', 'Type of Element ', 'X-Coordinate ', 'Y-Coordinate ', 'Z-Coordinate'
    do i = 1,NumberofAtoms
       print *, i, MoleculeInit(i)%element, MoleculeInit(i)%x, MoleculeInit(i)%y, MoleculeInit(i)%z
    enddo
-   print *, 'End Energy (J) =', CurrentEnergy
-   print *, 'End Energy (kcal) =', CurrentEnergy/4184
+   print *, 'End Energy (kJ/mol) =', CurrentEnergy/1000
+   print *, 'End Energy (kcal/mol) =', CurrentEnergy/4184
    deallocate(Bonds, MoleculeRef)
 
 endprogram 

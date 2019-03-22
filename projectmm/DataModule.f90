@@ -19,7 +19,8 @@ module DataModule
    save
    private
    public               :: ReadData, ReadParameters, Atom, BondLength, Parameters, &
-                           AssigningBonds, Binding, Planes
+                           AssigningBonds, Binding, Planes, AddToList_Angle,       &
+                           AddToList_Plane
 
    type Atom     
       character(1)      :: element
@@ -72,7 +73,6 @@ contains
 
       open(33,file='parameter.txt')
       read(33,*) Variables%TEMP
-      read(33,*) Variables%PRESSURE
       read(33,*) Variables%ForceConstantCC
       read(33,*) Variables%ForceConstantCH
       read(33,*) Variables%EquiBondCC
@@ -149,5 +149,51 @@ contains
        
    endsubroutine
    
+   subroutine AddToList_Angle(List, Element)
+      real, intent(inout), allocatable  :: List(:) 
+      real, intent(in)                  :: Element
+      real, allocatable                 :: ListDummy(:)
+      integer                           :: i, isize
+
+      if(allocated(List)) then
+         isize = size(List)
+         allocate(ListDummy(isize+1))
+         do i=1,isize  
+             ListDummy(i) = List(i)
+         end do
+         ListDummy(isize+1) = Element
+
+         deallocate(List)
+         call move_alloc(ListDummy, List)
+       else
+          allocate(List(1))            ! When you list is not allocated yet allocate it with size 1.
+          List(1) = Element
+       end if
+
+   endsubroutine
+
+
+   subroutine AddToList_Plane(List, Element)
+      type (Planes), intent(inout), allocatable :: List(:)
+      type (Planes), intent(in)                 :: Element
+      type (Planes), allocatable                :: ListDummy(:)
+      integer                                   :: i, isize
+
+      if(allocated(List)) then
+         isize = size(List)
+         allocate(ListDummy(isize+1))
+         do i=1,isize
+            ListDummy(i) = List(i)
+         end do
+         ListDummy(isize+1) = Element
+ 
+         deallocate(List)
+         call move_alloc(ListDummy, List)
+      else
+         allocate(List(1))
+         List(1) = Element
+      endif
+   
+   endsubroutine
 
 endmodule

@@ -50,13 +50,14 @@ contains
    endsubroutine
 
    subroutine BendEnergy(EnBend, Molecule, Variables, Bonds, NumberofAtoms)
-      real, intent(inout)               :: EnBend
-      type (Atom), intent(inout), allocatable        :: Molecule(:)
-      type (Parameters), intent(in)     :: Variables
-      type (Binding), intent(inout)     :: Bonds(:) 
-      real                              :: Angle(12)
-      integer                           :: i, j, k, l
-      integer, intent(in)               :: NumberofAtoms
+      real, intent(inout)                       :: EnBend
+      type (Atom), intent(inout), allocatable   :: Molecule(:)
+      type (Parameters), intent(in)             :: Variables
+      type (Binding), intent(inout)             :: Bonds(:) 
+      real, allocatable                         :: Angles(:)
+      integer                                   :: i, j, k, l
+      integer, intent(in)                       :: NumberofAtoms
+      real                                      :: Angle
 
       EnBend = 0
       l = 0
@@ -75,16 +76,16 @@ contains
             do j = 1,size(Bonds)
                do k = j,size(Bonds)
                   if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then
-                     l = l + 1
-                     Angle(l) = ((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
-                                (Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*   &
-                                (Bonds(k)%length))
+                     Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
+                             (Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*   &
+                             (Bonds(k)%length))
+                     call AddToList_Angle(Angles, Angle)
                   endif
                   if (j /= k .and. Bonds(j)%SecondAtom == i .and. Bonds(k)%FirstAtom == i) then
-                     l = l + 1
-                     Angle(l) = ((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
-                                ((Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*  &
-                                (Bonds(k)%length)))
+                     Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
+                             ((Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*  &
+                             (Bonds(k)%length)))
+                     call AddToList_Angle(Angles, Angle)
                   endif
                enddo
             enddo
@@ -92,9 +93,9 @@ contains
       enddo
 
       !!! The bending energy is calculated by looping over all the angles 
-
-      do l = 1, size(Angle)
-         EnBend = EnBend + Variables%ForceConstantAngle*((Angle(l) - Variables%EquiAngle)**2)
+      
+      do l = 1, size(Angles)
+         EnBend = EnBend + Variables%ForceConstantAngle*((acos(Angles(l)) - Variables%EquiAngle)**2)
       enddo
    
    endsubroutine
@@ -107,7 +108,8 @@ contains
       integer                                   :: i, j, k, l, m, n
       integer, intent(in)                       :: NumberofAtoms
       real                                      :: VectorX1, VectorY1, VectorZ1, VectorX2, VectorY2, VectorZ2, phi
-      type (Planes)                             :: Plane(12)
+      type (Planes), allocatable                :: PlanesList(:)
+      type (Planes)                             :: Plane
 
       EnTors = 0
       l = 0
@@ -116,12 +118,12 @@ contains
       !!! the different planes in the molecule are figured out, since the bonds desribe the
       !!! planes of the molecule. In the inner if statements, the planes are calculated by using
       !!! the coordinateds of three points on that plane.  
+      
       do i = 1,NumberofAtoms
          if (Molecule(i)%element == 'C') then
             do j = 1,size(Bonds)
                do k = j,size(Bonds)
                   if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i ) then
-                     l = l + 1
                      VectorX1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%x
                      VectorY1 = Molecule(Bonds(j)%SecondAtom)%y - Molecule(i)%y
                      VectorZ1 = Molecule(Bonds(j)%SecondAtom)%z - Molecule(i)%z
@@ -131,13 +133,15 @@ contains
                      
                      !!! Determine the values of a, b and c in the standard formula
                      !!! a(x-x0) + b(y-y0) + c(z-z0) = 0
-                     Plane(l)%a = (VectorY1*VectorZ2)-(VectorZ1*VectorY2)
-                     Plane(l)%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
-                     Plane(l)%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
+                     
+                     Plane%a = (VectorY1*VectorZ2)-(VectorZ1*VectorY2)
+                     Plane%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
+                     Plane%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
+
+                     call AddToList_Plane(Planeslist, Plane)
                      
              
                   elseif (j /= k .and. Bonds(j)%SecondAtom == i .and. Bonds(k)%FirstAtom == i) then
-                     l = l + 1
                      VectorX1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%x
                      VectorY1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%y
                      VectorZ1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%z
@@ -148,9 +152,12 @@ contains
                      !!! Determine the values of a, b and c in the standard formula
                      !!! a(x-x0) + b(y-y0) + c(z-z0) = 0
                      
-                     Plane(l)%a = (VectorY1*VectorZ2)-(VectorZ1*VectorY2)
-                     Plane(l)%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
-                     Plane(l)%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
+                     Plane%a = (VectorY1*VectorZ2)-(VectorZ1*VectorY2)
+                     Plane%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
+                     Plane%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
+
+                     call AddToList_Plane(PlanesList, Plane)
+
                   endif
                enddo
             enddo
@@ -161,12 +168,13 @@ contains
       !!! different planes and the angle between the planes is calculated. With this angle, the 
       !!! torsional energy can be calculated.
       
-      do m = 1, size(Plane)
-         do n = m, size(Plane)
+      do m = 1, size(PlanesList)
+         do n = m, size(PlanesList)
             if (n /= m) then
-               phi = (abs((Plane(m)%a*Plane(n)%a) + (Plane(m)%b*Plane(n)%b) + (Plane(m)%c*Plane(n)%c)) /     &
-                     (sqrt(Plane(m)%a**2 + Plane(m)%b**2 + Plane(m)%c**2) * sqrt(Plane(m)%a**2 +             &
-                     Plane(m)%b**2 + Plane(m)%c**2)))
+               phi = (abs((PlanesList(m)%a*PlanesList(n)%a) + (PlanesList(m)%b*PlanesList(n)%b) + &
+                       (PlanesList(m)%c*PlanesList(n)%c)) /     &
+                     (sqrt(PlanesList(m)%a**2 + PlanesList(m)%b**2 + PlanesList(m)%c**2) * sqrt(PlanesList(m)%a**2 +       &
+                     PlanesList(m)%b**2 + PlanesList(m)%c**2)))
                if (abs(phi) <= 1) then
                   phi = acos(phi)
                   EnTors = EnTors + 0.5*Variables%V1*(1 + cos(Variables%n*phi - Variables%gama))
@@ -177,22 +185,26 @@ contains
 
    endsubroutine
 
-   subroutine NonBondedEnergy(EnNonBond, Molecule, Variables)
-      real, intent(inout)               :: EnNonBond
-      type (Atom), intent(inout), allocatable        :: Molecule(:)
-      type (Parameters), intent(in)     :: Variables
-      integer                           :: i, j
-      real(8)                           :: Kelec, Rij, Avogadro
+   subroutine NonBondedEnergy(EnNonBond, Molecule, Variables, NumberofAtoms)
+      real, intent(inout)                       :: EnNonBond
+      type (Atom), intent(inout), allocatable   :: Molecule(:)
+      type (Parameters), intent(in)             :: Variables
+      integer                                   :: i, j
+      real(8)                                   :: Kelec, Rij, Avogadro
+      integer, intent(in)                       :: NumberofAtoms
       
       EnNonBond = 0
       Kelec = 8.987551787*(10**9) ! Constant in Law of Coulomb
       Avogadro = 6.022*(10**23) ! Constant of Avogadro
       
       !!! In this double loop, the non bonded energy is calculated between all the atoms
-      !!! with both the electronic effect and the Van Der Waals effect. 
+      !!! with both the electronic effect and the Van Der Waals effect. The double loop
+      !!! is there since all the atoms have these interactions with each other. Then there
+      !!! are three if statements to determine what kind of atoms interact with each other
+      !!! (C-C, C-H, or H-H).  
 
-      do i = 1, 8
-         do j = 1, 8
+      do i = 1, NumberofAtoms
+         do j = 1, NumberofAtoms
             if (i /= j) then
                Rij = BondLength(i, j, Molecule)
                if (Molecule(i)%element == 'C' .and. Molecule(j)%element == 'C') then
@@ -210,6 +222,7 @@ contains
             endif
          enddo
       enddo
+   
    endsubroutine 
    
    subroutine TotalEnergy(TotEner, Molecule, Variables, Bonds, NumberofAtoms)
@@ -225,7 +238,7 @@ contains
       call StretchEnergy(EnStretch, Molecule, Variables, Bonds, NumberofAtoms)
       call BendEnergy(EnBend, Molecule, Variables, Bonds, NumberofAtoms)
       call TorsionalEnergy(EnTors, Molecule, Variables, Bonds, NumberofAtoms)
-      call NonBondedEnergy(EnNonBond, Molecule, Variables)
+      call NonBondedEnergy(EnNonBond, Molecule, Variables, NumberofAtoms)
 
       TotEner = EnStretch + EnBend + EnNonBond
       
