@@ -30,6 +30,7 @@ use EnergyModule
    real                         :: CurrentEnergy, r, EnergyRef
    logical                      :: Check
    
+   print *, 
    print *, '-------------------Molecular Mechanics--------------------'
 
    !!! Initialize system by reading all the date from input
@@ -40,8 +41,7 @@ use EnergyModule
    allocate(MoleculeRef(NumberofAtoms))
    
    Call TotalEnergy(CurrentEnergy, MoleculeInit, Variables, Bonds, NumberofAtoms)
-
-   
+ 
    !!! Start the Metropolis algorithm
    EnergyRef = CurrentEnergy
    MoleculeRef = MoleculeInit

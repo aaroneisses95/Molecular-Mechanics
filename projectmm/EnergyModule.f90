@@ -70,36 +70,18 @@ contains
       !!! there is being checked if they are connected by the same atom but with another atom at the
       !!! other side of the bond. If so, an angle(l) is created with the corresponding angle between
       !!! the two bonds. 
-        
-      
-
-
 
       do i = 1,NumberofAtoms
          if (Molecule(i)%element == 'C') then
             do j = 1,size(Bonds)
                do k = j,size(Bonds)
-                  if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then
-                !     print *, '------------First-----------------------'
-                !     print *, 'i =', i
-                !     print *, 'j =', j, 'Bond(j) first atom =', Bonds(j)%FirstAtom, 'Bond(j) second atom =', Bonds(j)%SecondAtom
-                !     print *, 'k =', k, 'Bond(k) first atom =', Bonds(k)%FirstAtom, 'Bond(k) second atom =', Bonds(k)%SecondAtom
-                     
-                     
-                     
+                  if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then  
                      Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
                              (Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*   &
                              (Bonds(k)%length))
                      call AddToList_Angle(Angles, Angle)
                   endif
                   if (j /= k .and. Bonds(j)%SecondAtom == i .and. Bonds(k)%FirstAtom == i) then
-                !     print *, '-----------------Second--------------------'
-                !     print *, 'i =', i
-                !     print *, 'j =', j, 'Bond(j) first atom =', Bonds(j)%FirstAtom, 'Bond(j) second atom =', Bonds(j)%SecondAtom
-                !     print *, 'k =', k, 'Bond(k) first atom =', Bonds(k)%FirstAtom, 'Bond(k) second atom =', Bonds(k)%SecondAtom
-                     
-                          
-                          
                      Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
                              ((Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*  &
                              (Bonds(k)%length)))
@@ -109,6 +91,7 @@ contains
             enddo
          endif
       enddo
+      
       !!! The bending energy is calculated by looping over all the angles 
       
       do l = 1, size(Angles)
@@ -148,6 +131,7 @@ contains
                      VectorX2 = Molecule(Bonds(k)%SecondAtom)%x - Molecule(i)%x
                      VectorY2 = Molecule(Bonds(k)%SecondAtom)%y - Molecule(i)%y
                      VectorZ2 = Molecule(Bonds(k)%SecondAtom)%z - Molecule(i)%z
+                     
                      !!! Determine the values of a, b and c in the standard formula
                      !!! a(x-x0) + b(y-y0) + c(z-z0) = 0
                      
@@ -155,9 +139,7 @@ contains
                      Plane%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
                      Plane%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
 
-                     call AddToList_Plane(Planeslist, Plane)
-                     
-             
+                     call AddToList_Plane(Planeslist, Plane)            
                   elseif (j /= k .and. Bonds(j)%SecondAtom == i .and. Bonds(k)%FirstAtom == i) then
                      VectorX1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%x
                      VectorY1 = Molecule(Bonds(j)%SecondAtom)%x - Molecule(i)%y
@@ -188,9 +170,8 @@ contains
          do n = m, size(PlanesList)
             if (n /= m) then
                phi = (abs((PlanesList(m)%a*PlanesList(n)%a) + (PlanesList(m)%b*PlanesList(n)%b) + &
-                       (PlanesList(m)%c*PlanesList(n)%c)) /     &
-                     (sqrt(PlanesList(m)%a**2 + PlanesList(m)%b**2 + PlanesList(m)%c**2) * sqrt(PlanesList(m)%a**2 +       &
-                     PlanesList(m)%b**2 + PlanesList(m)%c**2)))
+                     (PlanesList(m)%c*PlanesList(n)%c)) / (sqrt(PlanesList(m)%a**2 + PlanesList(m)%b**2 &
+                     + PlanesList(m)%c**2) * sqrt(PlanesList(m)%a**2 + PlanesList(m)%b**2 + PlanesList(m)%c**2)))
                if (abs(phi) <= 1) then
                   phi = acos(phi)
                   EnTors = EnTors + 0.5*Variables%V1*(1 + cos(Variables%n*phi - Variables%gama))
