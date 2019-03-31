@@ -6,3 +6,5 @@ To use the code, use the command: gfortran DataModule.f90 Calculations.f90 Minim
 To let the code run, use the command : ./a.out
 
 To change the molecule that you want to investigate, change the file name in DataModule.f90 in line 47 to the name of another input file.
+
+In the parameter.txt file, all the parameters such as temperature can be adjusted. 
