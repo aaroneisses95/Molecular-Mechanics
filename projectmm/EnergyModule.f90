@@ -2,7 +2,7 @@
 !!! Author: Aaron Eisses
 !!! Studentnumber: 10593527
 !!! University: University of Amsterdam
-!!! Date changed: 11-02-2019
+!!! Date changed: 31-03-2019
 !!!____________________________________________________________________________
 !!!
 !!! PROJECT SCIENTIFIC COMPUTING AND PROGRAMMING: MOLECULAR MECHANICS
@@ -17,6 +17,7 @@
 
 module EnergyModule
 use DataModule
+use CalculationModule
 
    implicit none
    save
@@ -35,9 +36,8 @@ contains
 
       EnStretch = 0   
      
-      !!! Calculate the energy of bonds with E=K(r-r0)^2. It loops over all the bonds and the if statement
-      !!! is there to seperate the bonds that are C-C and C-H to make sure that the proper constants are
-      !!! used here.
+      !!! Calculate the energy of bonds with E=K(r-r0)^2. It loops over all the bonds and the if-statement
+      !!! is there to separate the C-C and C-H bonds to make sure that the proper constants are used.
 
       do i=1,size(Bonds)
          if (Bonds(i)%elements == 'CH') then
@@ -60,22 +60,19 @@ contains
       real                                      :: Angle
 
       EnBend = 0
-      l = 0
 
-      !!! The angles are calculated between the atoms of interest. The structure beneath is quite
-      !!! complicated so here is the explanation. First, it loops over all of the atoms in the 
-      !!! molecule. In the first if statement, only the C atoms are selected in the molecule. Since 
-      !!! H-atoms can only have one bond here, they can't be the connecting atom between two bonds.
-      !!! Then, there is a double loop with an if statement in it. In here, two bonds are taken and
-      !!! there is being checked if they are connected by the same atom but with another atom at the
-      !!! other side of the bond. If so, an angle(l) is created with the corresponding angle between
-      !!! the two bonds. 
+      !!! The angles are calculated between the atoms of interest. In the first if-statement, only 
+      !!! the C atoms are selected in the molecule because H-atoms can only have one bond here, and 
+      !!! therefore they can't be the connecting atom between two bonds. Then, two bonds are taken 
+      !!! and there is being checked if they are connected by the same atom but with another atom at 
+      !!! the other side of the bond. If so, an angle is created with the corresponding angle between 
+      !!! the two bonds and added to the list. 
 
       do i = 1,NumberofAtoms
          if (Molecule(i)%element == 'C') then
             do j = 1,size(Bonds)
                do k = j,size(Bonds)
-                  if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then  
+                  if (j /= k .and. Bonds(j)%FirstAtom == i .and. Bonds(k)%FirstAtom == i) then   
                      Angle = -((BondLength(Bonds(j)%SecondAtom, Bonds(k)%SecondAtom, Molecule))**2 - &
                              (Bonds(j)%length)**2 - (Bonds(k)%length)**2) / (2*(Bonds(j)%length)*   &
                              (Bonds(k)%length))
@@ -99,6 +96,7 @@ contains
             EnBend = EnBend + Variables%ForceConstantAngle*((acos(Angles(l)) - Variables%EquiAngle)**2)
          endif
       enddo
+
    endsubroutine
 
    subroutine TorsionalEnergy(EnTors, Molecule, Variables, Bonds, NumberofAtoms)
@@ -106,19 +104,18 @@ contains
       type (Atom), intent(inout), allocatable   :: Molecule(:)
       type (Parameters), intent(in)             :: Variables
       type (Binding), intent(inout)             :: Bonds(:)
-      integer                                   :: i, j, k, l, m, n
+      integer                                   :: i, j, k, m, n
       integer, intent(in)                       :: NumberofAtoms
-      real                                      :: VectorX1, VectorY1, VectorZ1, VectorX2, VectorY2, VectorZ2, phi
+      real                                      :: VectorX1, VectorY1, VectorZ1, VectorX2, VectorY2, &
+                                                   VectorZ2, phi
       type (Planes), allocatable                :: PlanesList(:)
       type (Planes)                             :: Plane
 
       EnTors = 0
-      l = 0
         
-      !!! This structure is quite similar to the one in the subroutine 'BendEnergy'. In the same way,
-      !!! the different planes in the molecule are figured out, since the bonds desribe the
-      !!! planes of the molecule. In the inner if statements, the planes are calculated by using
-      !!! the coordinateds of three points on that plane.  
+      !!! The different planes in the molecule are figured out, since every bond describes a plane 
+      !!! of the molecule. The formulas of the planes are calculated by using the coordinates of 
+      !!! three points on that plane.  
       
       do i = 1,NumberofAtoms
          if (Molecule(i)%element == 'C') then
@@ -147,10 +144,7 @@ contains
                      VectorX2 = Molecule(Bonds(k)%SecondAtom)%x - Molecule(i)%x
                      VectorY2 = Molecule(Bonds(k)%SecondAtom)%x - Molecule(i)%y
                      VectorZ2 = Molecule(Bonds(k)%SecondAtom)%x - Molecule(i)%z
-
-                     !!! Determine the values of a, b and c in the standard formula
-                     !!! a(x-x0) + b(y-y0) + c(z-z0) = 0
-                     
+ 
                      Plane%a = (VectorY1*VectorZ2)-(VectorZ1*VectorY2)
                      Plane%b = (VectorX1*VectorZ2)-(VectorZ1*VectorX2)
                      Plane%c = (VectorX1*VectorY2)-(VectorY1*VectorX2)
@@ -162,9 +156,8 @@ contains
          endif
       enddo
       
-      !!! Here, there is a double do loop with an if statement inside. There is being looped over two
-      !!! different planes and the angle between the planes is calculated. With this angle, the 
-      !!! torsional energy can be calculated.
+      !!! There is being looped over two different planes and the angle between the planes is calculated. 
+      !!! With this angle, the torsional energy can be calculated.
       
       do m = 1, size(PlanesList)
          do n = m, size(PlanesList)
@@ -187,34 +180,44 @@ contains
       type (Atom), intent(inout), allocatable   :: Molecule(:)
       type (Parameters), intent(in)             :: Variables
       integer                                   :: i, j
-      real(8)                                   :: Kelec, Rij, Avogadro
+      real                                      :: Rij
       integer, intent(in)                       :: NumberofAtoms
       
       EnNonBond = 0
-      Kelec = 8.987551787*(10**9) ! Constant in Law of Coulomb
-      Avogadro = 6.022*(10**23) ! Constant of Avogadro
       
-      !!! In this double loop, the non bonded energy is calculated between all the atoms
-      !!! with both the electronic effect and the Van Der Waals effect. The double loop
-      !!! is there since all the atoms have these interactions with each other. Then there
-      !!! are three if statements to determine what kind of atoms interact with each other
-      !!! (C-C, C-H, or H-H).  
-
+      !!! The non-bonded energy is calculated between all the atoms, considering the electronic effect and the Van Der 
+      !!! Waals effect. There are three if-statements to determine what kind of atoms interact with each other (C-C, C-H, 
+      !!! or H-H).
+ 
       do i = 1, NumberofAtoms
-         do j = 1, NumberofAtoms
+         do j = i, NumberofAtoms
             if (i /= j) then
                Rij = BondLength(i, j, Molecule)
                if (Molecule(i)%element == 'C' .and. Molecule(j)%element == 'C') then
-                  EnNonBond = EnNonBond + Avogadro*((Variables%ChargeC**2) * Kelec / (Rij/(10**10))) 
-                  EnNonBond = EnNonBond + Variables%WellDepthC*(((Variables%RstarC/Rij)**12)- 2*((Variables%RstarC/Rij)**6))
+
+                  !!! This if-statement makes sure that the electronic effect between two atoms is only counted once.
+                  !!! However, the Van der Waals interactions should be counted double since they can be different in an
+                  !!! atom pair. 
+
+                  if (i < j) then
+                     EnNonBond = EnNonBond + Variables%Avogadro*((Variables%ChargeC**2)*Variables%Kelec/(Rij/(10**10))) 
+                  endif                
+                  EnNonBond = EnNonBond + Variables%WellDepthC*(((Variables%RstarC/Rij)**12)-2*((Variables%RstarC/Rij)**6))
+               
                elseif (Molecule(i)%element == 'H' .and. Molecule(j)%element == 'H') then
-                  EnNonBond = EnNonBond + Avogadro*((Variables%ChargeH**2) * Kelec / (Rij/(10**10))) 
-                  EnNonBond = EnNonBond + Variables%WellDepthH*(((Variables%RstarH/Rij)**12)- 2*((Variables%RstarH/Rij)**6)) 
-               else    
-                  EnNonBond = EnNonBond + Avogadro*((Variables%ChargeH*Variables%ChargeC) * Kelec / (Rij/(10**10)))
-                  EnNonBond = EnNonBond + sqrt(Variables%WellDepthH*Variables%WellDepthC) *             &
-                  (((((Variables%RstarC/2)+(Variables%RstarH/2))/Rij)**12) - 2*((((Variables%RstarC/2)+ &
-                  (Variables%RstarH/2))/Rij)**6))
+                  if (i < j) then      
+                     EnNonBond = EnNonBond + Variables%Avogadro*((Variables%ChargeH**2)*Variables%Kelec/(Rij/(10**10))) 
+                  endif
+                  EnNonBond = EnNonBond + Variables%WellDepthH*(((Variables%RstarH/Rij)**12)-2*((Variables%RstarH/Rij)**6)) 
+               
+               else
+                  if (i < j) then    
+                     EnNonBond = EnNonBond + Variables%Avogadro*((Variables%ChargeH*Variables%ChargeC)*Variables%Kelec/ &
+                                 (Rij/(10**10)))
+                  endif
+                  EnNonBond = EnNonBond + sqrt(Variables%WellDepthH*Variables%WellDepthC) * &
+                              (((((Variables%RstarC/2)+(Variables%RstarH/2))/Rij)**12) - 2*((((Variables%RstarC/2)+ &
+                              (Variables%RstarH/2))/Rij)**6))
                endif
             endif
          enddo
@@ -230,7 +233,6 @@ contains
       real                                              :: EnStretch, EnBend, EnNonBond, EnTors
       integer, intent(in)                               :: NumberofAtoms
 
-       
       call AssigningBonds(Bonds, NumberofAtoms, Molecule, Variables)
       call StretchEnergy(EnStretch, Molecule, Variables, Bonds, NumberofAtoms)
       call BendEnergy(EnBend, Molecule, Variables, Bonds, NumberofAtoms)
@@ -240,8 +242,7 @@ contains
       TotEner = EnStretch + EnBend + EnNonBond
 
       deallocate(Bonds)
-!      print *, 'TotEner =', TotEner, 'EnStretch =', EnStretch, 'EnBend =', EnBend, 'EnTors =', EnTors, 'EnNonBond =', EnNonBond
-   endsubroutine
 
+   endsubroutine
 
 endmodule
